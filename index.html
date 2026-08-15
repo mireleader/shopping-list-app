@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>쇼핑 리스트</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <h1>🛒 쇼핑 리스트</h1>
+
+    <form id="add-form" class="add-form">
+      <input type="text" id="item-input" placeholder="살 물건을 입력하세요" autocomplete="off">
+      <button type="submit">추가</button>
+    </form>
+
+    <ul id="item-list" class="item-list"></ul>
+
+    <p id="empty-message" class="empty-message">리스트가 비어있어요. 물건을 추가해보세요!</p>
+
+    <footer class="summary">
+      <span id="summary-text">0개 항목</span>
+      <button id="clear-checked" class="clear-btn">완료된 항목 삭제</button>
+    </footer>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
