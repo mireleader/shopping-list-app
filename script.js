@@ -1,4 +1,7 @@
-const STORAGE_KEY = "shopping-list-items";
+const SUPABASE_URL = "https://qdqlqgsulpzxeshsqnyj.supabase.co";
+const SUPABASE_KEY = "sb_publishable_nUs7UFOsHiHuO4go7lYfsw_wRTeBzKK";
+
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const appEl = document.querySelector(".app");
 const formEl = document.getElementById("add-form");
@@ -7,19 +10,21 @@ const listEl = document.getElementById("item-list");
 const summaryEl = document.getElementById("summary-text");
 const clearCheckedBtn = document.getElementById("clear-checked");
 
-let items = loadItems();
+let items = [];
 
-function loadItems() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
+async function loadItems() {
+  const { data, error } = await supabaseClient
+    .from("shopping_items")
+    .select("*")
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("아이템을 불러오지 못했습니다:", error);
+    return;
   }
-}
 
-function saveItems() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  items = data;
+  render();
 }
 
 function render() {
@@ -53,28 +58,70 @@ function render() {
   summaryEl.textContent = `${items.length}개 항목 · ${checkedCount}개 완료`;
 }
 
-function addItem(text) {
-  items.push({ id: crypto.randomUUID(), text, checked: false });
-  saveItems();
+async function addItem(text) {
+  const { data, error } = await supabaseClient
+    .from("shopping_items")
+    .insert({ text })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("아이템을 추가하지 못했습니다:", error);
+    return;
+  }
+
+  items.push(data);
   render();
 }
 
-function toggleItem(id) {
+async function toggleItem(id) {
   const item = items.find((i) => i.id === id);
-  if (item) item.checked = !item.checked;
-  saveItems();
+  if (!item) return;
+
+  const { error } = await supabaseClient
+    .from("shopping_items")
+    .update({ checked: !item.checked })
+    .eq("id", id);
+
+  if (error) {
+    console.error("아이템을 갱신하지 못했습니다:", error);
+    return;
+  }
+
+  item.checked = !item.checked;
   render();
 }
 
-function deleteItem(id) {
+async function deleteItem(id) {
+  const { error } = await supabaseClient
+    .from("shopping_items")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("아이템을 삭제하지 못했습니다:", error);
+    return;
+  }
+
   items = items.filter((i) => i.id !== id);
-  saveItems();
   render();
 }
 
-function clearChecked() {
+async function clearChecked() {
+  const checkedIds = items.filter((i) => i.checked).map((i) => i.id);
+  if (checkedIds.length === 0) return;
+
+  const { error } = await supabaseClient
+    .from("shopping_items")
+    .delete()
+    .in("id", checkedIds);
+
+  if (error) {
+    console.error("완료된 항목을 삭제하지 못했습니다:", error);
+    return;
+  }
+
   items = items.filter((i) => !i.checked);
-  saveItems();
   render();
 }
 
@@ -89,4 +136,4 @@ formEl.addEventListener("submit", (e) => {
 
 clearCheckedBtn.addEventListener("click", clearChecked);
 
-render();
+loadItems();
